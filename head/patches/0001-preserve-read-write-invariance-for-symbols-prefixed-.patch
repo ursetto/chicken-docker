@@ -1,0 +1,28 @@
+From 834a8d231d5bcdfc9bc517e8902ceee3c18d98e8 Mon Sep 17 00:00:00 2001
+From: felix <felix@call-with-current-continuation.org>
+Date: Sun, 23 Dec 2018 20:44:51 +0100
+Subject: [PATCH] preserve read/write invariance for symbols prefixed with "#!"
+ only for #!rest, #!key and #!optional
+
+---
+ library.scm | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/library.scm b/library.scm
+index 0891f6a4..1e95382e 100644
+--- a/library.scm
++++ b/library.scm
+@@ -4556,8 +4556,8 @@ EOF
+ 				      (eq? c #\-) )
+ 				  (not (##sys#string->number str)) )
+ 				 ((eq? c #\:) (not (eq? ksp #:prefix)))
+-				 ((eq? c #\#) ;; #!rest, #!key etc
+-				  (eq? (##core#inline "C_subchar" str 1) #\!))
++				 ((and (eq? c #\#))
++                                  (member str '("#!rest" "#!key" "#!optional")))
+ 				 ((specialchar? c) #f)
+ 				 (else #t) ) )
+ 			 (let ((c (##core#inline "C_subchar" str i)))
+-- 
+2.16.2
+
