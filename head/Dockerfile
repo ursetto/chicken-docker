@@ -1,11 +1,9 @@
-FROM alpine:3.8
+FROM chicken:5.0.0-alpine
 
 ENV PATH /usr/local/bin:$PATH
-#ENV CHICKEN_VERSION 4.13.0
 
 WORKDIR /usr/src
 
-COPY patches /usr/src
 RUN set -ex \
         && apk add --no-cache --virtual .fetch-deps \
            tar \
@@ -16,17 +14,36 @@ RUN set -ex \
                make \
         && git clone https://code.call-cc.org/git/chicken-core.git
 
+# git clone from call-cc is slow, so we keep the clone in the
+# image and pull in a separate step. To re-pull, bust cache via:
+#   docker build --build-arg CACHETIME=$(date +%s)
+#   docker build --build-arg CACHETIME=1            # use iter
+# (It may be better to make an intermediate Dockerfile for
+# the clone and base this off that, as this is ugly.)
+
+ARG CACHETIME=0
+RUN cd chicken-core && echo Repulling at $CACHETIME && git pull
+
+COPY patches /usr/src/chicken-core/patches
+
 RUN set -ex \
-        && cd chicken-core
+        && cd chicken-core \
         && git config --global user.email "jim@3e8.org" \
         && git config --global user.name "Jim Ursetto" \
-        && git am /usr/src/*.patch
+        && git am patches/*
 
-        # && make PLATFORM=linux PREFIX=/usr/local install \
-        # && make PLATFORM=linux PREFIX=/usr/local check \
-        # && rm -rf /usr/src/chicken-core \
-        # && csi -version
+RUN set -ex \
+        && cd chicken-core \
+        && make PLATFORM=linux CHICKEN=/usr/local/bin/chicken PREFIX=/usr/local boot-chicken
 
-CMD ["sh"]
-#CMD ["csi"]
+RUN set -ex \
+        && cd chicken-core \
+        && make PLATFORM=linux CHICKEN=./chicken-boot PREFIX=/usr/local install
+
+RUN set -ex \
+        && cd chicken-core \
+        && make PLATFORM=linux PREFIX=/usr/local check \
+        && csi -version
+
+CMD ["csi"]
 
