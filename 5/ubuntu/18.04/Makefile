@@ -1,4 +1,5 @@
 CHICKEN_VERSION=5.0.0
+ITER := 1
 TAG=$(CHICKEN_VERSION)-ubuntu18.04
 
 build:
@@ -17,11 +18,19 @@ build-ver:
 	  cdrx/fpm-ubuntu:18.04 \
 		fpm -f -s dir -t deb -p /deb \
 		  -n chicken-$(CHICKEN_VERSION) \
-		  -v 1 \
+		  -v $(CHICKEN_VERSION) \
+		  --iteration $(ITER) \
+		  --license BSD \
+		  --url http://www.call-cc.org \
+		  --maintainer jim@3e8.org \
+		  --vendor jim@3e8.org \
+		  --description 'CHICKEN Scheme compiler, runtime and development environment' \
 		  .
 	@# Chicken version is included in package name to allow multiple concurrent installs.
 	@# 
-	@# additions: changelog needs to be set or zeroed (?)
+	@# additions:
+	@# maintainer, homepage, license, vendor, description, changelog
+	@# dependencies!
 	
 	@# Clean up our temporary docker volume
 	docker volume rm $(VOL) > /dev/null
